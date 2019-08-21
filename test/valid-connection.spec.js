@@ -7,7 +7,6 @@ const expect = chai.expect
 chai.use(dirtyChai)
 
 const multiaddr = require('multiaddr')
-const pull = require('pull-stream')
 
 const WebRTCDirect = require('../src')
 
@@ -17,45 +16,19 @@ describe('valid Connection', function () {
   let wd
   let conn
 
-  before((done) => {
+  before(async () => {
     wd = new WebRTCDirect()
 
-    wd.dial(ma, { config: {} }, (err, _conn) => {
-      expect(err).to.not.exist()
-      conn = _conn
-      done()
-    })
+    conn = await wd.dial(ma, { config: {} })
   })
 
-  after((done) => {
-    pull(
-      pull.empty(),
-      conn,
-      pull.onEnd(done)
-    )
+  after(async () => {
+    conn && await conn.close()
   })
 
-  it('get observed addrs', (done) => {
-    conn.getObservedAddrs((err, addrs) => {
-      expect(err).to.not.exist()
-      expect(addrs[0].toString()).to.equal(ma.toString())
-      done()
-    })
-  })
+  it('get observed addrs', () => {
+    const addrs = conn.getObservedAddrs()
 
-  it('get Peer Info', (done) => {
-    conn.getPeerInfo((err, peerInfo) => {
-      expect(err).to.exist()
-      done()
-    })
-  })
-
-  it('set Peer Info', (done) => {
-    conn.setPeerInfo('info')
-    conn.getPeerInfo((err, peerInfo) => {
-      expect(err).to.not.exist()
-      expect(peerInfo).to.equal('info')
-      done()
-    })
+    expect(addrs[0].toString()).to.equal(ma.toString())
   })
 })
